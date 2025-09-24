@@ -1,0 +1,56 @@
+# --- Node.js dependencies ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Build / Output directories ---
+dist/
+build/
+out/
+release/
+*.tgz
+
+# --- Electron build artifacts ---
+/*.asar
+/*.asar.unpacked
+
+# --- React specific ---
+renderer/build/
+renderer/.cache/
+
+# --- SQLite database / buffers ---
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+
+# --- Environment & secrets ---
+.env
+.env.local
+.env.*.local
+
+# --- OS specific ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+
+# --- Crash reports / logs ---
+*.log
+*.pid
+*.seed
+*.pid.lock
