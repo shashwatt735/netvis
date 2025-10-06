@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electron Test</title>
+</head>
+<body>
+    <h1>Electron is working.</h1>
+    <p>If you see this page, Electron has been set up correctly.</p>
+    <div>
+        <button id="myButton">Click Me</button>
+        <p id="output"></p>
+    </div>
+</body>
+
+</html>
+<script>
+    const button = document.getElementById('myButton');
+    const output = document.getElementById('output');
+
+    button.addEventListener('click', () => {
+        output.textContent = 'Button was clicked!';
+        console.log("Button click event fired!");
+    });
+</script>
+
