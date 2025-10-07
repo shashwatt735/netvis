@@ -1,4 +1,4 @@
-# Network Visualization Learning Tool
+# NetVis
 
 A **cross-platform desktop application** for learning and visualizing network traffic.
 It simulates or captures real packets, encrypts sensitive data, stores it securely, and visualizes network interactions.
