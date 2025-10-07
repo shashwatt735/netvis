@@ -1,11 +1,11 @@
-# 🔸 Network Visualization Learning Tool
+# Network Visualization Learning Tool
 
 A **cross-platform desktop application** for learning and visualizing network traffic.
 It simulates or captures real packets, encrypts sensitive data, stores it securely, and visualizes network interactions.
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Packet Capture**
   - Simulated packets (default)
@@ -30,7 +30,7 @@ It simulates or captures real packets, encrypts sensitive data, stores it secure
 
 ---
 
-## 🧩 Project Structure
+## Project Structure
 
 ```
 src/
@@ -50,10 +50,9 @@ src/
 ├─ storage/        # Database (Better SQLite3)
 ├─ security/       # Encryption and key management
 ├─ visualization/  # D3 / Three.js visualization components
-├─ components/     # React UI components
-└─ native/         # Optional C++ native modules
+└─ components/     # React UI components
 
-build/ or dist/    # Output after build
+dist/              # Output after build
 captures/          # Encrypted packet files (.enc)
 resources/         # Icons, images
 test/              # Unit tests (Jest)
@@ -61,9 +60,9 @@ test/              # Unit tests (Jest)
 
 ---
 
-## ⚙️ Installation
+## Installation
 
-### 1️⃣ Prerequisites
+### Prerequisites
 
 - [Node.js (LTS)](https://nodejs.org/)
 - [Git](https://git-scm.com/)
@@ -71,7 +70,7 @@ test/              # Unit tests (Jest)
 
 ---
 
-### 2️⃣ Clone and install
+### Clone and install
 
 ```bash
 git clone https://github.com/yourusername/network-visualizer.git
@@ -81,7 +80,7 @@ npm install
 
 ---
 
-## 🧬 Development
+## Development
 
 To start both Electron and Vite in development mode:
 
@@ -96,7 +95,7 @@ This runs:
 
 ---
 
-## 🏷️ Building for Production
+## Building for Production
 
 ```bash
 npm run build
@@ -110,7 +109,7 @@ This will:
 
 ---
 
-## 🤪 Testing
+## Testing
 
 To run tests:
 
@@ -122,9 +121,9 @@ You can place your Jest test files in `/test/`.
 
 ---
 
-## 🔐 Security and Privacy
+## Security and Privacy
 
-⚠️ **Important Notice**
+**Important**
 
 This application may handle or simulate **real network data**, which can contain **sensitive information** such as IP addresses or payloads.
 
@@ -136,7 +135,7 @@ Best practices:
 
 ---
 
-## 🧮 Scripts
+## Scripts
 
 | Command           | Description                         |
 | ----------------- | ----------------------------------- |
@@ -148,7 +147,7 @@ Best practices:
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 **Core**
 
@@ -173,7 +172,7 @@ Best practices:
 
 ---
 
-## 💿 Example Encrypted Output
+## Example Encrypted Output
 
 When you stop capture, packets are saved as:
 
@@ -185,7 +184,7 @@ You can later decrypt using your `crypto-js` key to view or visualize.
 
 ---
 
-## 🖯️ Roadmap
+<!-- ## 🖯️ Roadmap>
 
 - [ ] Add real-time packet capture via `node-pcap`
 - [ ] Integrate database-backed storage
@@ -199,10 +198,10 @@ You can later decrypt using your `crypto-js` key to view or visualize.
 
 **Your Name**
 
-<!--📧 [your.email@example.com](mailto:your.email@example.com)
-🌐 [yourwebsite.dev](https://yourwebsite.dev) -->
-
+📧 [your.email@example.com](mailto:your.email@example.com)
+🌐 [yourwebsite.dev](https://yourwebsite.dev)
 ---
+-->
 
 ## 📜 License
 
