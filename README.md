@@ -203,6 +203,6 @@ You can later decrypt using your `crypto-js` key to view or visualize.
 ---
 -->
 
-## 📜 License
+## License
 
 MIT License © 2025
