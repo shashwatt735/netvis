@@ -9,7 +9,7 @@ It simulates or captures real packets, encrypts sensitive data, stores it secure
 
 - **Packet Capture**
   - Simulated packets (default)
-  - Real packet capture support (via `node-pcap` or `cap`)
+  - Real packet capture support (via `cap`)
 
 - **Secure Storage**
   - AES encryption using `crypto-js`
@@ -53,7 +53,7 @@ src/
 ├─ components/     # React UI components
 └─ native/         # Optional C++ native modules
 
-build/ or dist/    # Output after build
+dist/              # Output after build
 captures/          # Encrypted packet files (.enc)
 resources/         # Icons, images
 test/              # Unit tests (Jest)
@@ -74,8 +74,8 @@ test/              # Unit tests (Jest)
 ### 2️⃣ Clone and install
 
 ```bash
-git clone https://github.com/yourusername/network-visualizer.git
-cd network-visualizer
+git clone https://github.com/shashwatt735/netvis.git
+cd netvis
 npm install
 ```
 
