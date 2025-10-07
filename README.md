@@ -206,4 +206,4 @@ You can later decrypt using your `crypto-js` key to view or visualize.
 
 ## 📜 License
 
-MIT License © 2025 Your Name
+MIT License © 2025
