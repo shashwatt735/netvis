@@ -1,0 +1,34 @@
+{
+  "packets": [
+    {
+      "id": 1,
+      "timestamp": "2025-11-06T12:00:00.000Z",
+      "srcIP": "192.168.1.100",
+      "destIP": "192.168.1.1",
+      "protocol": "TCP",
+      "srcPort": 54321,
+      "destPort": 80,
+      "length": 64
+    },
+    {
+      "id": 2,
+      "timestamp": "2025-11-06T12:00:00.001Z",
+      "srcIP": "192.168.1.1",
+      "destIP": "192.168.1.100",
+      "protocol": "TCP",
+      "srcPort": 80,
+      "destPort": 54321,
+      "length": 1460
+    },
+    {
+      "id": 3,
+      "timestamp": "2025-11-06T12:00:01.000Z",
+      "srcIP": "192.168.1.100",
+      "destIP": "8.8.8.8",
+      "protocol": "UDP",
+      "srcPort": 53124,
+      "destPort": 53,
+      "length": 72
+    }
+  ]
+}

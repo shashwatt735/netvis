@@ -1,27 +1,82 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Electron Test</title>
-</head>
-<body>
-    <h1>Electron is working.</h1>
-    <p>If you see this page, Electron has been set up correctly.</p>
-    <div>
-        <button id="myButton">Click Me</button>
-        <p id="output"></p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NetVis - Network Packet Visualizer</title>
+
+    <!-- Meta tags -->
+    <meta
+      name="description"
+      content="Educational network packet visualization tool for learning networking concepts"
+    />
+    <meta name="author" content="NetVis Team" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Base styling -->
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Roboto", sans-serif;
+        background-color: #1a1a1a;
+        color: #ffffff;
+        overflow: hidden; /* Prevent scrolling - app handles it */
+      }
+
+      #root {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      /* Loading indicator */
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #3f51b5;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Root element where React mounts -->
+    <div id="root">
+      <!-- Loading indicator shown before React loads -->
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        <div>Loading NetVis...</div>
+      </div>
     </div>
-</body>
 
+    <!-- React application entry point -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
-<script>
-    const button = document.getElementById('myButton');
-    const output = document.getElementById('output');
-
-    button.addEventListener('click', () => {
-        output.textContent = 'Button was clicked!';
-        console.log("Button click event fired!");
-    });
-</script>
-

@@ -1,6 +1,4 @@
 ## TODO
 
-- change test script from echo to jest
-
-1. create config files
-2. basic boilerplate to test react and electron
+1. improve the frontend
+2. work on basic capture using pcap file and parsing to show a few details
