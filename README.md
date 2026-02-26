@@ -1,8 +1,9 @@
-# NetVis
+# NetVis Legacy
 
 A **cross-platform desktop application** for learning and visualizing network traffic.
 It simulates or captures real packets, encrypts sensitive data, stores it securely, and visualizes network interactions.
-
+---
+⚠️ This is the legacy version. See `NewProjectName` for the active project.
 ---
 
 ## Features
