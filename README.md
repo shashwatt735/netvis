@@ -10,14 +10,9 @@ It simulates or captures real packets, encrypts sensitive data, stores it secure
 
 - **Packet Capture**
   - Simulated packets (default)
-  - Real packet capture support (via `cap`)
 
 - **Secure Storage**
   - AES encryption using `crypto-js`
-  - Encrypted `.enc` files stored in `/captures/`
-
-- **Interactive Visualization**
-  - 2D/3D network graphs using `react-force-graph-3d`
 
 - **Cross-Platform**
   - Works on **Windows**, **macOS**, and **Linux**
@@ -34,29 +29,47 @@ It simulates or captures real packets, encrypts sensitive data, stores it secure
 ## Project Structure
 
 ```
-src/
-├─ main/           # Electron main process
-│  ├─ index.js     # Electron entry point
-│  └─ preload.js   # Secure bridge between Electron and React
-│
-├─ renderer/       # React + Vite frontend
-│  ├─ index.html
-│  ├─ index.jsx
-│  └─ App.jsx
-│
-├─ capture/        # Packet capture logic
-│  └─ network.js
-│
-├─ parser/         # Protocol parsing modules
-├─ storage/        # Database (Better SQLite3)
-├─ security/       # Encryption and key management
-├─ visualization/  # D3 / Three.js visualization components
-└─ components/     # React UI components
+netvis
+    └── backup
+    └── electron
+        └── pcap
+            ├── packetParser.js
+            ├── packetProcessor.js
+            ├── pcapReader.js
+            ├── simulatedCapture.js
+            ├── utils.js
+        ├── main.js
+        ├── preload.cjs
+        ├── simluatedCapture
+    └── src
+        └── components
+            ├── FileLoader.tsx
+            ├── LiveCaptureView.tsx
+            ├── PacketDetail.tsx
+            ├── PacketList.tsx
+            ├── ProtocolChart.tsx
+        └── parser
+        └── renderer
+        └── types
+            ├── electron.d.ts
+            ├── packet.types.ts
+        ├── App.tsx
+        ├── main.tsx
+    └── test
+        └── fixtures
+            ├── simple.json
+        └── utils
+    ├── .gitignore
+    ├── index.html
+    ├── nul
+    ├── package-lock.json
+    ├── package.json
+    ├── README.md
+    ├── todo.md
+    ├── tsconfig.json
+    ├── tsconfig.node.json
+    └── vite.config.ts
 
-dist/              # Output after build
-captures/          # Encrypted packet files (.enc)
-resources/         # Icons, images
-test/              # Unit tests (Jest)
 ```
 
 ---
@@ -74,7 +87,7 @@ test/              # Unit tests (Jest)
 ### Clone and install
 
 ```bash
-git clone https://github.com/shashwatt735/netvis.git
+git clone https://github.com/shashwatt735/netvis-legacy.git
 cd netvis
 npm install
 ```
@@ -159,10 +172,6 @@ Best practices:
 - `node-pcap` _(optional, real capture)_
 - `better-sqlite3` _(for storage)_
 
-**Visualization**
-
-- `d3`, `react-force-graph-3d`, `three`
-
 **Security**
 
 - `crypto-js`
@@ -185,22 +194,6 @@ You can later decrypt using your `crypto-js` key to view or visualize.
 
 ---
 
-<!-- ## 🖯️ Roadmap>
-
-- [ ] Add real-time packet capture via `node-pcap`
-- [ ] Integrate database-backed storage
-- [ ] Decrypt and visualize packets
-- [ ] Add protocol parsers (TCP, UDP, HTTP)
-- [ ] Build an educational mode for learning network layers
-
----
-
-## 🧑‍💻 Author
-
-**Your Name**
-
-📧 [your.email@example.com](mailto:your.email@example.com)
-🌐 [yourwebsite.dev](https://yourwebsite.dev)
 ---
 -->
 
