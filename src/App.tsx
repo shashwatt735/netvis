@@ -1,4 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+/**
+ * NetVis - Main Application Component
+ * 
+ * This is the root component that manages the entire application state
+ * and coordinates all child components.
+ * 
+ * State Management:
+ * - packets: Array of parsed packets
+ * - selectedPacket: Currently selected packet for detail view
+ * - loading: Is a file being processed?
+ * - error: Error message (if any)
+ * - statistics: Protocol distribution and other stats
+ * - filename: Currently loaded file
+ * 
+ * Location: src/App.tsx
+ */
+
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ThemeProvider,
   createTheme,
@@ -8,240 +25,390 @@ import {
   Toolbar,
   Typography,
   Button,
-  CircularProgress,
+  LinearProgress,
   Alert,
   Container,
+  Paper,
+  Grid,
+  Tabs,
+  Tab
 } from '@mui/material';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
+import { FolderOpen as FolderOpenIcon, PlayCircle as PlayCircleIcon } from '@mui/icons-material';
 
+// Import types
+import { Packet } from './types/packet.types';
+import { ParseProgress, PacketStatistics } from './types/electron';
+
+// Import child components
 import PacketList from './components/PacketList';
 import PacketDetail from './components/PacketDetail';
 import ProtocolChart from './components/ProtocolChart';
-import { Packet } from './types/packet.types';
+import LiveCaptureView from './components/LiveCaptureView';
 
 /**
- * Ensure `window.electron` type safety for TS users.
- * If you're not using a global declaration file, you can add it there instead.
+ * Dark theme configuration
+ * NetVis uses a dark theme for better contrast with network data
  */
-declare global {
-  interface Window {
-    electron: {
-      openPcapDialog: () => Promise<any>;
-      onLoadingProgress: (cb: (progress: any) => void) => () => void;
-    };
-  }
-}
-
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
-    primary: { main: '#3f51b5' },
-    secondary: { main: '#f50057' },
-    background: { default: '#1a1a1a', paper: '#242424' },
+    primary: {
+      main: '#2196F3', // Blue - matches TCP color
+    },
+    secondary: {
+      main: '#4CAF50', // Green - matches UDP color
+    },
+    background: {
+      default: '#1e1e1e',
+      paper: '#2d2d2d',
+    },
+    text: {
+      primary: '#ffffff',
+      secondary: '#aaaaaa',
+    },
   },
-  typography: { fontFamily: '"Roboto","Helvetica","Arial",sans-serif', fontSize: 14 },
+  typography: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    h4: {
+      fontWeight: 600,
+    },
+    h6: {
+      fontWeight: 500,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none', // Don't uppercase buttons
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+  },
 });
 
-const App: React.FC = () => {
+/**
+ * Main Application Component
+ */
+function App() {
+  // ============================================================================
+  // STATE MANAGEMENT
+  // ============================================================================
+  
+  // Packet data
   const [packets, setPackets] = useState<Packet[]>([]);
   const [selectedPacket, setSelectedPacket] = useState<Packet | null>(null);
+  
+  // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ParseProgress | null>(null);
+  
+  // File info
   const [filename, setFilename] = useState<string | null>(null);
-  const [loadingProgress, setLoadingProgress] = useState<{ current: number; total: number; packets?: number }>({
-    current: 0,
-    total: 0,
-  });
-
-  // ===== IPC: load PCAP file =====
-  const handleLoadPcap = useCallback(async () => {
-    if (!window.electron || typeof window.electron.openPcapDialog !== 'function') {
-      setError('Electron API not available.');
+  const [statistics, setStatistics] = useState<PacketStatistics | null>(null);
+  
+  // View mode (File Analyzer vs Live Capture)
+  const [viewMode, setViewMode] = useState<'file' | 'live'>('file');
+  
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
+  
+  /**
+   * Setup progress listener
+   * Listens for progress updates from main process during file parsing
+   */
+  useEffect(() => {
+    if (!window.electron) {
+      console.error('Electron API not available');
       return;
     }
-
-    setLoading(true);
-    setError(null);
-    setPackets([]);
-    setSelectedPacket(null);
-    setFilename(null);
-    setLoadingProgress({ current: 0, total: 0 });
-
+    
+    // Register progress listener
+    const cleanup = window.electron.onParseProgress((progressData) => {
+      console.log('Progress update:', progressData);
+      setProgress(progressData);
+    });
+    
+    // Cleanup on unmount
+    return cleanup;
+  }, []);
+  
+  /**
+   * Auto-select first packet when packets load
+   */
+  useEffect(() => {
+    if (packets.length > 0 && !selectedPacket) {
+      setSelectedPacket(packets[0]);
+    }
+  }, [packets, selectedPacket]);
+  
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+  
+  /**
+   * Handle file selection and parsing
+   */
+  const handleLoadFile = useCallback(async () => {
     try {
-      const result = await window.electron.openPcapDialog();
-
-      // User cancelled
-      if (!result) {
-        setLoading(false);
+      // Clear previous state
+      setError(null);
+      setProgress(null);
+      
+      // Step 1: Open file dialog
+      console.log('Opening file dialog...');
+      const filepath = await window.electron.openPcapDialog();
+      
+      if (!filepath) {
+        console.log('User cancelled file dialog');
         return;
       }
-      if (result.cancelled) {
-        setLoading(false);
-        return;
+      
+      console.log('Selected file:', filepath);
+      
+      // Step 2: Parse file
+      setLoading(true);
+      setFilename(filepath.split('/').pop() || filepath.split('\\').pop() || 'Unknown');
+      
+      console.log('Parsing PCAP file...');
+      const result = await window.electron.parsePcapFile(filepath);
+      
+      // Step 3: Handle result
+      if (result.success && result.packets) {
+        console.log('Parse successful:', {
+          packets: result.packets.length,
+          processingTime: result.fileInfo?.processingTime
+        });
+        
+        setPackets(result.packets);
+        setStatistics(result.statistics || null);
+        setError(null);
+        
+        // Show success message briefly
+        console.log(`✅ Loaded ${result.packets.length} packets in ${result.fileInfo?.processingTime}s`);
+      } else {
+        console.error('Parse failed:', result.error);
+        setError(result.error || 'Failed to parse PCAP file');
+        setPackets([]);
+        setStatistics(null);
       }
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to load PCAP file');
-      }
-
-      // set packets & meta
-      setPackets(Array.isArray(result.packets) ? result.packets : []);
-      setFilename(result.filepath ?? null);
-
-      // When new packets are loaded, auto-select the first packet (optional)
-      if (Array.isArray(result.packets) && result.packets.length > 0) {
-        setSelectedPacket(result.packets[0]);
-      }
-    } catch (err: any) {
-      console.error('Error loading PCAP:', err);
-      setError(err?.message ?? 'Unknown error loading PCAP');
+      
+    } catch (err) {
+      console.error('Error loading file:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setPackets([]);
+      setStatistics(null);
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   }, []);
-
-  // ===== IPC: progress listener =====
-  useEffect(() => {
-    if (!window.electron || typeof window.electron.onLoadingProgress !== 'function') return;
-
-    const cleanup = window.electron.onLoadingProgress((progress) => {
-      // Defensive merging/structure handling
-      setLoadingProgress((prev) => ({
-        current: progress?.current ?? prev.current,
-        total: progress?.total ?? prev.total,
-        packets: progress?.packets ?? prev.packets,
-      }));
-    });
-
-    return () => {
-      try {
-        cleanup && cleanup();
-      } catch (e) {
-        // ignore cleanup errors
-      }
-    };
+  
+  /**
+   * Handle packet selection
+   */
+  const handlePacketSelect = useCallback((packet: Packet) => {
+    console.log('Packet selected:', packet.frameNumber);
+    setSelectedPacket(packet);
   }, []);
-
-  // ===== Selection handler =====
-  const handlePacketSelect = useCallback((p: Packet) => {
-    setSelectedPacket(p);
+  
+  /**
+   * Handle clearing all data
+   */
+  const handleClear = useCallback(() => {
+    console.log('Clearing all data');
+    setPackets([]);
+    setSelectedPacket(null);
+    setStatistics(null);
+    setFilename(null);
+    setError(null);
+    setProgress(null);
   }, []);
-
-  // ===== Derived stats (memoized) =====
-  const totalPackets = useMemo(() => packets.length, [packets]);
-
-  const totalBytes = useMemo(() => {
-    return packets.reduce((s, p) => s + (p.length ?? 0), 0);
-  }, [packets]);
-
-  // const protocolCounts = useMemo(() => {
-  //   const counts = new Map<string, number>();
-  //   for (const p of packets) {
-  //     const key = p.protocol ?? 'OTHER';
-  //     counts.set(key, (counts.get(key) ?? 0) + 1);
-  //   }
-  //   return counts;
-  // }, [packets]);
-
-  // ===== UI Rendering =====
+  
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+  
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
+      
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <AppBar position="static" elevation={2}>
+        {/* Top App Bar */}
+        <AppBar position="static" elevation={0}>
           <Toolbar>
-            <NetworkCheckIcon sx={{ mr: 2, fontSize: 32 }} />
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              NetVis - Network Packet Visualizer
+              NetVis
+              {filename && viewMode === 'file' && (
+                <Typography component="span" variant="body2" sx={{ ml: 2, color: 'rgba(255,255,255,0.7)' }}>
+                  {filename}
+                </Typography>
+              )}
             </Typography>
-
-            <Button
-              variant="contained"
-              color="secondary"
-              startIcon={<FolderOpenIcon />}
-              onClick={handleLoadPcap}
-              disabled={loading}
+            
+            {/* Mode Tabs */}
+            <Tabs
+              value={viewMode}
+              onChange={(_, newValue) => setViewMode(newValue)}
+              sx={{ mr: 2 }}
+              textColor="inherit"
+              indicatorColor="secondary"
             >
-              Load PCAP File
-            </Button>
-          </Toolbar>
-        </AppBar>
-
-        <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          {/* LEFT: Packet list */}
-          <Box sx={{ width: '60%', borderRight: '1px solid rgba(255,255,255,0.12)', display: 'flex', flexDirection: 'column' }}>
-            {loading && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2 }}>
-                <CircularProgress size={60} />
-                <Typography variant="h6">Loading PCAP file…</Typography>
-                {loadingProgress.total > 0 && (
-                  <Typography variant="body2" color="text.secondary">
-                    {(loadingProgress.packets ?? 0).toLocaleString()} packets parsed • {((loadingProgress.current / Math.max(1, loadingProgress.total)) * 100).toFixed(1)}%
-                  </Typography>
-                )}
-              </Box>
-            )}
-
-            {error && (
-              <Container sx={{ mt: 4 }}>
-                <Alert severity="error" onClose={() => setError(null)}>
-                  {error}
-                </Alert>
-              </Container>
-            )}
-
-            {!loading && !error && packets.length === 0 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2, color: 'text.secondary' }}>
-                <FolderOpenIcon sx={{ fontSize: 80, opacity: 0.28 }} />
-                <Typography variant="h5">No packets loaded</Typography>
-                <Typography variant="body2">Click “Load PCAP File” to get started</Typography>
-              </Box>
-            )}
-
-            {!loading && !error && packets.length > 0 && (
+              <Tab 
+                icon={<FolderOpenIcon />} 
+                iconPosition="start" 
+                label="File Analyzer" 
+                value="file"
+              />
+              <Tab 
+                icon={<PlayCircleIcon />} 
+                iconPosition="start" 
+                label="Live Capture" 
+                value="live"
+              />
+            </Tabs>
+            
+            {viewMode === 'file' && (
               <>
-                <Box sx={{ p: 2, bgcolor: 'background.paper', borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>{totalPackets.toLocaleString()}</strong> packets • <strong>{(totalBytes / 1024).toFixed(2)} KB</strong>
-                    {filename && ` • ${filename.split(/[\\/]/).pop()}`}
-                  </Typography>
-                </Box>
-
-                <Box sx={{ flex: 1, overflow: 'auto' }}>
-                  <PacketList packets={packets} selectedPacket={selectedPacket} onPacketSelect={handlePacketSelect} />
-                </Box>
+                <Button
+                  variant="contained"
+                  startIcon={<FolderOpenIcon />}
+                  onClick={handleLoadFile}
+                  disabled={loading}
+                  sx={{ mr: 1 }}
+                >
+                  Load PCAP File
+                </Button>
+                
+                {packets.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleClear}
+                    disabled={loading}
+                  >
+                    Clear
+                  </Button>
+                )}
               </>
             )}
-          </Box>
-
-          {/* RIGHT: Chart & details */}
-          <Box sx={{ width: '40%', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-            {packets.length > 0 && (
-              <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
-                <Typography variant="h6" gutterBottom>
-                  Protocol Distribution
-                </Typography>
-                <ProtocolChart packets={packets} />
-              </Box>
-            )}
-
-            {selectedPacket ? (
-              <Box sx={{ flex: 1, overflow: 'auto' }}>
-                <PacketDetail packet={selectedPacket} />
-              </Box>
-            ) : (
-              packets.length > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'text.secondary' }}>
-                  <Typography variant="body1">Select a packet to view details</Typography>
+          </Toolbar>
+          
+          {/* Loading Progress Bar (File mode only) */}
+          {loading && viewMode === 'file' && (
+            <LinearProgress
+              variant={progress?.percentage ? 'determinate' : 'indeterminate'}
+              value={progress?.percentage || 0}
+            />
+          )}
+        </AppBar>
+        
+        {/* Progress Message (File mode only) */}
+        {loading && progress && viewMode === 'file' && (
+          <Alert severity="info" sx={{ m: 2, mb: 0 }}>
+            {progress.message}
+            {progress.percentage && ` (${progress.percentage}%)`}
+          </Alert>
+        )}
+        
+        {/* Error Message (File mode only) */}
+        {error && viewMode === 'file' && (
+          <Alert severity="error" onClose={() => setError(null)} sx={{ m: 2, mb: 0 }}>
+            {error}
+          </Alert>
+        )}
+        
+        {/* Main Content - Conditional Rendering */}
+        <Box sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex' }}>
+          {viewMode === 'live' ? (
+            // Live Capture Mode
+            <LiveCaptureView />
+          ) : (
+            // File Analyzer Mode
+            packets.length === 0 ? (
+              // Empty State
+              <Container maxWidth="sm" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <FolderOpenIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+                  <Typography variant="h4" gutterBottom>
+                    Welcome to NetVis
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" paragraph>
+                    An educational tool for learning network protocols through packet visualization
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<FolderOpenIcon />}
+                    onClick={handleLoadFile}
+                    disabled={loading}
+                    sx={{ mt: 2 }}
+                  >
+                    Load PCAP File
+                  </Button>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                    Supported formats: .pcap, .pcapng
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Or try <strong>Live Capture</strong> mode to simulate real-time packet capture!
+                  </Typography>
                 </Box>
-              )
-            )}
-          </Box>
+              </Container>
+            ) : (
+              // Packet View
+              <Grid container spacing={0} sx={{ height: '100%' }}>
+                {/* Left Column: Packet List + Detail */}
+                <Grid item xs={12} md={8} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  {/* Packet List */}
+                  <Box sx={{ height: '50%', overflow: 'hidden', borderRight: 1, borderColor: 'divider' }}>
+                    <PacketList
+                      packets={packets}
+                      selectedPacket={selectedPacket}
+                      onPacketSelect={handlePacketSelect}
+                    />
+                  </Box>
+                  
+                  {/* Packet Detail */}
+                  <Box sx={{ height: '50%', overflow: 'auto', borderRight: 1, borderTop: 1, borderColor: 'divider' }}>
+                    {selectedPacket ? (
+                      <PacketDetail packet={selectedPacket} />
+                    ) : (
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                        <Typography color="text.secondary">
+                          Select a packet to view details
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Grid>
+                
+                {/* Right Column: Visualizations */}
+                <Grid item xs={12} md={4} sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+                  <Box sx={{ p: 2 }}>
+                    {/* Protocol Chart */}
+                    {statistics && (
+                      <Box sx={{ mt: 2 }}>
+                        <ProtocolChart statistics={statistics} />
+                      </Box>
+                    )}
+                  </Box>
+                </Grid>
+              </Grid>
+            )
+          )}
         </Box>
       </Box>
     </ThemeProvider>
   );
-};
+}
 
 export default App;

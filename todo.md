@@ -1,6 +1,11 @@
-## TODO
+# NetVis Bug Fixes TODO
 
-1. ~improve the frontend~
-2. ~work on basic capture using pcap file and parsing to show a few details~
-3. let us improve the ui with modern standards, rounded corner elements, good contrast theme with both dark and white, better  and cleaner visuals
+## Issue 1: Does not read .pcapng files
+- [ ] 1.1 Update `pcapReader.js`: Add PCAPNG format detection and parsing
+- [ ] 1.2 Update `simulatedCapture.js`: Add PCAPNG format detection
+- [ ] 1.3 Update `validatePcapFile()` in pcapReader.js to accept PCAPNG files
 
+## Issue 2: Simulated capture loads but nothing is displayed
+- [ ] 2.1 Update `simulatedCapture.js`: Fix stats structure to match LiveCaptureView expectations
+- [ ] 2.2 Add `isComplete` flag when all packets are sent
+- [ ] 2.3 Add `totalBytes`, `duration`, `packetsPerSecond`, and `protocols` to stats

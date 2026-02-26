@@ -22,15 +22,14 @@ import React, { useState, useCallback, memo } from "react";
 import {
   Box,
   Typography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Chip,
 } from "@mui/material";
+import { TreeView, TreeItem } from "@mui/lab";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { Packet } from "../types/packet.types";
 
-// ===== Helper component for consistent field rendering =====
+// ===== Helper component for field rendering =====
 const Field = memo(({ label, value }: { label: string; value: string | number }) => (
   <Box sx={{ display: "flex", py: 0.5 }}>
     <Typography
@@ -65,13 +64,11 @@ const PacketDetail: React.FC<PacketDetailProps> = ({ packet }) => {
     "arp",
   ]);
 
-  const handleAccordionChange = useCallback(
-    (panel: string) => {
-      setExpanded((prev) =>
-        prev.includes(panel) ? prev.filter((p) => p !== panel) : [...prev, panel]
-      );
+  const handleToggle = useCallback(
+    (_event: React.SyntheticEvent, nodeIds: string[]) => {
+      setExpanded(nodeIds);
     },
-    [setExpanded]
+    []
   );
 
   if (!packet) {
@@ -88,103 +85,57 @@ const PacketDetail: React.FC<PacketDetailProps> = ({ packet }) => {
         Packet Details #{packet.frameNumber ?? "?"}
       </Typography>
 
-      {/* ===== FRAME INFORMATION ===== */}
-      <Accordion
-        expanded={expanded.includes("frame")}
-        onChange={() => handleAccordionChange("frame")}
+      <TreeView
+        defaultCollapseIcon={<ExpandMoreIcon />}
+        defaultExpandIcon={<ChevronRightIcon />}
+        expanded={expanded}
+        onNodeToggle={handleToggle}
+        sx={{ flexGrow: 1, maxWidth: 400 }}
       >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-            📦 Frame {packet.frameNumber ?? "?"}
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Field label="Frame Number" value={packet.frameNumber ?? "—"} />
-          <Field label="Timestamp" value={packet.timestampString ?? "—"} />
-          <Field label="Length" value={`${packet.length ?? 0} bytes`} />
-          <Field label="Protocol" value={packet.protocol ?? "Unknown"} />
-        </AccordionDetails>
-      </Accordion>
+        {/* ===== FRAME INFORMATION ===== */}
+        <TreeItem nodeId="frame" label={`📦 Frame ${packet.frameNumber ?? "?"}`}>
+          <TreeItem nodeId="frame-number" label={`Frame Number: ${packet.frameNumber ?? "—"}`} />
+          <TreeItem nodeId="frame-timestamp" label={`Timestamp: ${packet.timestampString ?? "—"}`} />
+          <TreeItem nodeId="frame-length" label={`Length: ${packet.length ?? 0} bytes`} />
+          <TreeItem nodeId="frame-protocol" label={`Protocol: ${packet.protocol ?? "Unknown"}`} />
+        </TreeItem>
 
-      {/* ===== ETHERNET LAYER ===== */}
-      {packet.layers?.ethernet && (
-        <Accordion
-          expanded={expanded.includes("ethernet")}
-          onChange={() => handleAccordionChange("ethernet")}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              🔗 Ethernet II
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Field label="Destination MAC" value={packet.layers.ethernet.destinationMAC ?? "—"} />
-            <Field label="Source MAC" value={packet.layers.ethernet.sourceMAC ?? "—"} />
-            <Field label="Type" value={packet.layers.ethernet.etherTypeName ?? "—"} />
-            <Field
-              label="EtherType Value"
-              value={
-                packet.layers.ethernet.etherType
-                  ? `0x${packet.layers.ethernet.etherType.toString(16).toUpperCase()}`
-                  : "—"
-              }
-            />
-          </AccordionDetails>
-        </Accordion>
-      )}
+        {/* ===== ETHERNET LAYER ===== */}
+        {packet.layers?.ethernet && (
+          <TreeItem nodeId="ethernet" label="🔗 Ethernet II">
+            <TreeItem nodeId="eth-dest-mac" label={`Destination MAC: ${packet.layers.ethernet.destinationMAC ?? "—"}`} />
+            <TreeItem nodeId="eth-src-mac" label={`Source MAC: ${packet.layers.ethernet.sourceMAC ?? "—"}`} />
+            <TreeItem nodeId="eth-type" label={`Type: ${packet.layers.ethernet.etherTypeName ?? "—"}`} />
+            <TreeItem nodeId="eth-ethertype" label={`EtherType Value: ${packet.layers.ethernet.etherType ? `0x${packet.layers.ethernet.etherType.toString(16).toUpperCase()}` : "—"}`} />
+          </TreeItem>
+        )}
 
-      {/* ===== IP LAYER ===== */}
-      {packet.layers?.ip && (
-        <Accordion
-          expanded={expanded.includes("ip")}
-          onChange={() => handleAccordionChange("ip")}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              🌐 Internet Protocol v{packet.layers.ip.version ?? "?"}
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Field label="Version" value={packet.layers.ip.version ?? "—"} />
-            <Field
-              label="Header Length"
-              value={`${packet.layers.ip.headerLength ?? 0} bytes`}
-            />
-            <Field label="Source IP" value={packet.layers.ip.sourceIP ?? "—"} />
-            <Field label="Destination IP" value={packet.layers.ip.destinationIP ?? "—"} />
-            <Field label="Protocol" value={packet.layers.ip.protocolName ?? "—"} />
-            <Field label="TTL" value={packet.layers.ip.ttl ?? "—"} />
-            <Field label="Total Length" value={`${packet.layers.ip.length ?? 0} bytes`} />
-            <Field label="Identification" value={packet.layers.ip.identification ?? "—"} />
-          </AccordionDetails>
-        </Accordion>
-      )}
+        {/* ===== IP LAYER ===== */}
+        {packet.layers?.ip && (
+          <TreeItem nodeId="ip" label={`🌐 Internet Protocol v${packet.layers.ip.version ?? "?"}`}>
+            <TreeItem nodeId="ip-version" label={`Version: ${packet.layers.ip.version ?? "—"}`} />
+            <TreeItem nodeId="ip-header-len" label={`Header Length: ${packet.layers.ip.headerLength ?? 0} bytes`} />
+            <TreeItem nodeId="ip-src-ip" label={`Source IP: ${packet.layers.ip.sourceIP ?? "—"}`} />
+            <TreeItem nodeId="ip-dest-ip" label={`Destination IP: ${packet.layers.ip.destinationIP ?? "—"}`} />
+            <TreeItem nodeId="ip-protocol" label={`Protocol: ${packet.layers.ip.protocolName ?? "—"}`} />
+            <TreeItem nodeId="ip-ttl" label={`TTL: ${packet.layers.ip.ttl ?? "—"}`} />
+            <TreeItem nodeId="ip-total-len" label={`Total Length: ${packet.layers.ip.length ?? 0} bytes`} />
+            <TreeItem nodeId="ip-identification" label={`Identification: ${packet.layers.ip.identification ?? "—"}`} />
+          </TreeItem>
+        )}
 
-      {/* ===== TCP LAYER ===== */}
-      {packet.layers?.tcp && (
-        <Accordion
-          expanded={expanded.includes("tcp")}
-          onChange={() => handleAccordionChange("tcp")}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              🚀 Transmission Control Protocol (TCP)
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Field label="Source Port" value={packet.layers.tcp.sourcePort ?? "—"} />
-            <Field label="Destination Port" value={packet.layers.tcp.destinationPort ?? "—"} />
-            <Field label="Sequence Number" value={packet.layers.tcp.sequenceNumber ?? "—"} />
-            <Field label="Acknowledgment" value={packet.layers.tcp.acknowledgmentNumber ?? "—"} />
-            <Field label="Window Size" value={packet.layers.tcp.windowSize ?? "—"} />
-
+        {/* ===== TCP LAYER ===== */}
+        {packet.layers?.tcp && (
+          <TreeItem nodeId="tcp" label="🚀 Transmission Control Protocol (TCP)">
+            <TreeItem nodeId="tcp-src-port" label={`Source Port: ${packet.layers.tcp.sourcePort ?? "—"}`} />
+            <TreeItem nodeId="tcp-dest-port" label={`Destination Port: ${packet.layers.tcp.destinationPort ?? "—"}`} />
+            <TreeItem nodeId="tcp-seq-num" label={`Sequence Number: ${packet.layers.tcp.sequenceNumber ?? "—"}`} />
+            <TreeItem nodeId="tcp-ack-num" label={`Acknowledgment: ${packet.layers.tcp.acknowledgmentNumber ?? "—"}`} />
+            <TreeItem nodeId="tcp-window-size" label={`Window Size: ${packet.layers.tcp.windowSize ?? "—"}`} />
             {/* TCP Flags */}
             {packet.layers.tcp.flags && (
-              <Box sx={{ py: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                  Flags:
-                </Typography>
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <TreeItem nodeId="tcp-flags" label="Flags">
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", ml: 2 }}>
                   {Object.entries(packet.layers.tcp.flags ?? {}).map(([flag, value]) => (
                     <Chip
                       key={flag}
@@ -195,86 +146,42 @@ const PacketDetail: React.FC<PacketDetailProps> = ({ packet }) => {
                     />
                   ))}
                 </Box>
-              </Box>
+              </TreeItem>
             )}
-          </AccordionDetails>
-        </Accordion>
-      )}
+          </TreeItem>
+        )}
 
-      {/* ===== UDP LAYER ===== */}
-      {packet.layers?.udp && (
-        <Accordion
-          expanded={expanded.includes("udp")}
-          onChange={() => handleAccordionChange("udp")}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              📡 User Datagram Protocol (UDP)
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Field label="Source Port" value={packet.layers.udp.sourcePort ?? "—"} />
-            <Field label="Destination Port" value={packet.layers.udp.destinationPort ?? "—"} />
-            <Field label="Length" value={`${packet.layers.udp.length ?? 0} bytes`} />
-            <Field
-              label="Checksum"
-              value={
-                packet.layers.udp.checksum
-                  ? `0x${packet.layers.udp.checksum.toString(16).toUpperCase()}`
-                  : "—"
-              }
-            />
-          </AccordionDetails>
-        </Accordion>
-      )}
+        {/* ===== UDP LAYER ===== */}
+        {packet.layers?.udp && (
+          <TreeItem nodeId="udp" label="📡 User Datagram Protocol (UDP)">
+            <TreeItem nodeId="udp-src-port" label={`Source Port: ${packet.layers.udp.sourcePort ?? "—"}`} />
+            <TreeItem nodeId="udp-dest-port" label={`Destination Port: ${packet.layers.udp.destinationPort ?? "—"}`} />
+            <TreeItem nodeId="udp-length" label={`Length: ${packet.layers.udp.length ?? 0} bytes`} />
+            <TreeItem nodeId="udp-checksum" label={`Checksum: ${packet.layers.udp.checksum ? `0x${packet.layers.udp.checksum.toString(16).toUpperCase()}` : "—"}`} />
+          </TreeItem>
+        )}
 
-      {/* ===== ICMP LAYER ===== */}
-      {packet.layers?.icmp && (
-        <Accordion
-          expanded={expanded.includes("icmp")}
-          onChange={() => handleAccordionChange("icmp")}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              📨 Internet Control Message Protocol (ICMP)
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Field label="Type" value={packet.layers.icmp.typeName ?? "—"} />
-            <Field label="Type Code" value={packet.layers.icmp.type ?? "—"} />
-            <Field label="Code" value={packet.layers.icmp.code ?? "—"} />
-            <Field
-              label="Checksum"
-              value={
-                packet.layers.icmp.checksum
-                  ? `0x${packet.layers.icmp.checksum.toString(16).toUpperCase()}`
-                  : "—"
-              }
-            />
-          </AccordionDetails>
-        </Accordion>
-      )}
+        {/* ===== ICMP LAYER ===== */}
+        {packet.layers?.icmp && (
+          <TreeItem nodeId="icmp" label="📨 Internet Control Message Protocol (ICMP)">
+            <TreeItem nodeId="icmp-type" label={`Type: ${packet.layers.icmp.typeName ?? "—"}`} />
+            <TreeItem nodeId="icmp-type-code" label={`Type Code: ${packet.layers.icmp.type ?? "—"}`} />
+            <TreeItem nodeId="icmp-code" label={`Code: ${packet.layers.icmp.code ?? "—"}`} />
+            <TreeItem nodeId="icmp-checksum" label={`Checksum: ${packet.layers.icmp.checksum ? `0x${packet.layers.icmp.checksum.toString(16).toUpperCase()}` : "—"}`} />
+          </TreeItem>
+        )}
 
-      {/* ===== ARP LAYER ===== */}
-      {packet.layers?.arp && (
-        <Accordion
-          expanded={expanded.includes("arp")}
-          onChange={() => handleAccordionChange("arp")}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              🔍 Address Resolution Protocol (ARP)
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Field label="Operation" value={packet.layers.arp.operationName ?? "—"} />
-            <Field label="Sender MAC" value={packet.layers.arp.senderMAC ?? "—"} />
-            <Field label="Sender IP" value={packet.layers.arp.senderIP ?? "—"} />
-            <Field label="Target MAC" value={packet.layers.arp.targetMAC ?? "—"} />
-            <Field label="Target IP" value={packet.layers.arp.targetIP ?? "—"} />
-          </AccordionDetails>
-        </Accordion>
-      )}
+        {/* ===== ARP LAYER ===== */}
+        {packet.layers?.arp && (
+          <TreeItem nodeId="arp" label="🔍 Address Resolution Protocol (ARP)">
+            <TreeItem nodeId="arp-operation" label={`Operation: ${packet.layers.arp.operationName ?? "—"}`} />
+            <TreeItem nodeId="arp-sender-mac" label={`Sender MAC: ${packet.layers.arp.senderMAC ?? "—"}`} />
+            <TreeItem nodeId="arp-sender-ip" label={`Sender IP: ${packet.layers.arp.senderIP ?? "—"}`} />
+            <TreeItem nodeId="arp-target-mac" label={`Target MAC: ${packet.layers.arp.targetMAC ?? "—"}`} />
+            <TreeItem nodeId="arp-target-ip" label={`Target IP: ${packet.layers.arp.targetIP ?? "—"}`} />
+          </TreeItem>
+        )}
+      </TreeView>
     </Box>
   );
 };
